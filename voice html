@@ -1,0 +1,343 @@
+Index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI ChatBot with Voice</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h2>🤖 NeoBot Voice</h2>
+    </div>
+    <div class="chat-box" id="chat-box">
+      <div class="bot-message">Hello! I’m NeoBot. Try typing or speaking to me 🎤</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="user-input" placeholder="Type your message or click mic..." />
+      <button id="mic-btn">🎤</button>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+Style.css
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  height: 100vh;
+  background: radial-gradient(circle at top, #001f3f, #000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.chat-container {
+  width: 380px;
+  background: rgba(10, 20, 40, 0.9);
+  border: 2px solid #00ffff;
+  box-shadow: 0 0 30px #00ffff44;
+  border-radius: 15px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  background: linear-gradient(90deg, #001f3f, #003366);
+  padding: 15px;
+  color: #00ffff;
+  text-align: center;
+  font-size: 1.2em;
+  border-bottom: 1px solid #00ffff44;
+}
+
+.chat-box {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bot-message, .user-message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 15px;
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.bot-message {
+  background: #00264d;
+  color: #00ffff;
+  align-self: flex-start;
+  box-shadow: 0 0 10px #00ffff33;
+}
+
+.user-message {
+  background: #00ffff;
+  color: #001f3f;
+  align-self: flex-end;
+  box-shadow: 0 0 10px #00ffff66;
+}
+
+.chat-input {
+  display: flex;
+  border-top: 1px solid #00ffff33;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #00ffff;
+  font-size: 1em;
+}
+
+.chat-input input::placeholder {
+  color: #00ffff88;
+}
+
+.chat-input button {
+  background: #00ffff;
+  color: #001f3f;
+  border: none;
+  padding: 0 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.chat-input button:hover {
+  background: #00ccff;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+Script.js
+const chatBox = document.getElementById("chat-box");
+const userInput = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const micBtn = document.getElementById("mic-btn");
+
+sendBtn.addEventListener("click", sendMessage);
+userInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// 🎤 Voice Recognition
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+if (recognition) {
+  recognition.continuous = false;
+  recognition.lang = "en-US";
+
+  micBtn.addEventListener("click", () => {
+    recognition.start();
+    micBtn.textContent = "🎙️ Listening...";
+  });
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    userInput.value = transcript;
+    micBtn.textContent = "🎤";
+    sendMessage();
+  };
+
+  recognition.onerror = () => {
+    micBtn.textContent = "🎤";
+    addMessage("Yo, I couldn’t hear you properly 😅 Try again!", "bot");
+  };
+} else {
+  micBtn.style.display = "none";
+  addMessage("Voice recognition not supported on this browser.", "bot");
+}
+
+// 🗣️ Senpai Spider–Style Voice
+function speak(text) {
+  const synth = window.speechSynthesis;
+  const utterance = new SpeechSynthesisUtterance(text);
+
+  // ⚙️ Voice style
+  utterance.rate = 1.3;   // energetic speed
+  utterance.pitch = 0.9;  // deep but lively
+  utterance.volume = 1.0;
+
+  const voices = synth.getVoices();
+  const preferredVoices = ["Google US English", "Microsoft David", "Daniel", "Alex"];
+  const selected = voices.find(v => preferredVoices.includes(v.name)) || voices[0];
+  utterance.voice = selected;
+
+  synth.cancel();
+  synth.speak(utterance);
+}
+
+// 💬 Send + Reply
+function sendMessage() {
+  const msg = userInput.value.trim();
+  if (msg === "") return;
+
+  addMessage(msg, "user");
+  userInput.value = "";
+
+  setTimeout(() => {
+    const reply = getBotReply(msg);
+    addMessage(reply, "bot");
+    speak(reply);
+  }, 600);
+}
+
+function addMessage(text, sender) {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add(sender === "user" ? "user-message" : "bot-message");
+  msgDiv.textContent = text;
+  chatBox.appendChild(msgDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// 🧠 NeoBot Brain (YouTuber Personality)
+function getBotReply(input) {
+  input = input.toLowerCase();
+
+  // 👋 Greetings
+  if (input.includes("hello") || input.includes("hi"))
+    return random([
+      "Yo! What’s up, legend? 😎",
+      "Hey hey hey! Let’s gooo!",
+      "Sup brooo! Ready to vibe? 🔥"
+    ]);
+
+  if (input.includes("how are you"))
+    return "Feeling' charged up, baby! ⚡ You good?";
+
+  if (input.includes("name"))
+    return "Name’s NeoBot, your digital hype-man 🤖💥";
+
+  if (input.includes("creator"))
+    return "Built by the genius Sachit, the coder supreme 🧠💪";
+
+  // 🕒 Time & Date
+  if (input.includes("time")) return "It’s " + new Date().toLocaleTimeString() + ", my dude!";
+  if (input.includes("date")) return "Today’s date is " + new Date().toLocaleDateString() + " 📅";
+
+  // ➗ Math
+  if (/[0-9+\-*/().]/.test(input)) {
+    try {
+      const result = eval(input);
+      return `Quick maths, baby! The answer is ${result} 🧮🔥`;
+    } catch {
+      return "Uh oh... that math just broke my brain 😵‍💫";
+    }
+  }
+
+  // 😂 Jokes
+  if (input.includes("joke"))
+    return random([
+      "Why did the computer show up late? It had a hard drive! 😂",
+      "My code walks into a bar... the bartender says, 'I think you have a few bugs!' 🪲",
+      "Bro, why do JavaScript devs wear glasses? Because they can’t C#! 🤓"
+    ]);
+
+  // 💡 Facts
+  if (input.includes("fact"))
+    return random([
+      "Yo! Did you know the first computer bug was an actual moth? 🦋",
+      "Light travels 186,000 miles per second — faster than your Wi-Fi! ⚡",
+      "Fun fact: The first website is still online at info.cern.ch 🌐"
+    ]);
+
+  // 💪 Motivation
+  if (input.includes("motivate") || input.includes("quote"))
+    return random([
+      "Dream big. Code bigger. 🚀",
+      "Winners focus on winning, losers focus on winners 😤",
+      "Let’s get that W today! 💯🔥"
+    ]);
+
+  // 🗯️ Hype Catchphrases
+  if (input.includes("let’s go") || input.includes("lets go"))
+    return "LETS GOOOOOOO! 💥🔥💪";
+  if (input.includes("bruh"))
+    return "BRUUUUHHH 😂😂😂";
+  if (input.includes("funny"))
+    return "That’s straight comedy gold, my friend 😂🔥";
+
+  // ❤️ Compliments
+  if (input.includes("you are"))
+    return random([
+      "Ayy thanks fam! You’re the real MVP 💪",
+      "Stop it, you’re making me blush 😳🤖",
+      "Appreciate you, legend! 💯"
+    ]);
+
+  // 🌦️ Weather
+  if (input.includes("weather")) {
+    const temp = Math.floor(Math.random() * 10) + 25;
+    const cond = ["sunny", "cloudy", "windy", "rainy"][Math.floor(Math.random() * 4)];
+    return `Outside? It’s ${cond} and about ${temp}°C, perfect grind weather 🌤️`;
+  }
+
+  // 🎓 Advice
+  if (input.includes("advice"))
+    return random([
+      "Don’t chase followers — chase greatness 😎",
+      "Keep your mind clean and your code cleaner 🧠💻",
+      "Drink water. Debug your life. Stay awesome 💧🔥"
+    ]);
+
+  // 🌐 Open Sites
+  if (input.includes("open youtube")) {
+    window.open("https://www.youtube.com", "_blank");
+    return "Opening YouTube... time for some banger content 🎥🔥";
+  }
+  if (input.includes("open google")) {
+    window.open("https://www.google.com", "_blank");
+    return "Google’s loading up, genius 🧠";
+  }
+  if (input.includes("open github")) {
+    window.open("https://github.com", "_blank");
+    return "GitHub time — let’s ship some code 💻";
+  }
+
+  // 👋 Goodbye
+  if (input.includes("bye"))
+    return random([
+      "Peace out, legend ✌️🔥",
+      "Later brooo! Keep grinding 💪",
+      "Stay awesome! NeoBot signing off 💫"
+    ]);
+
+  // Default responses
+  return random([
+    "Bruh, that’s wild 😳",
+    "I vibe with that 😎",
+    "Facts 💯",
+    "Yo, say that again — sounds deep 🔥",
+    "Interesting... tell me more 👀"
+  ]);
+}
+
+// Random helper
+function random(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+
